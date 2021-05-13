@@ -25,6 +25,15 @@ class PreBid(TradingState):
       except Exception as error:
         print(error)
 
+class TradeBuy(TradingState):
+  def __init__(self, coin, buy_price, amount, with_idr=True):
+      self._coin = coin
+      self._buy_price = buy_price
+      self._amount = amount
+      self._with_idr = with_idr
+
+  def action(self):
+      return super().action()
 
 class Utilities:
   def analyze(symbol, screener, exchange, interval):
