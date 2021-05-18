@@ -1,3 +1,4 @@
+from indodax.indodax import indodax as indodax_client
 from tradingview_ta import TA_Handler
 import time
 import random
@@ -26,14 +27,19 @@ class PreBid(TradingState):
         print(error)
 
 class TradeBuy(TradingState):
-  def __init__(self, coin, buy_price, amount, with_idr=True):
-      self._coin = coin
-      self._buy_price = buy_price
-      self._amount = amount
-      self._with_idr = with_idr
+  def __init__(self, indodax, coin, amount, idr_or_btc='idr'):
+    self._indodax = indodax
+    self._coin = coin
+    self._amount = amount
+    self._with_idr = idr_or_btc
 
   def action(self):
-      return super().action()
+    market_sell_price = float(indodax_client.get_price(self._coin)['ticker']['sell'])
+    market_buy_price = float(indodax_client.get_price(self._coin)['ticker']['buy'])
+    print(Utilities.dye_str(f"Buying {self._coin} at: {market_sell_price}", 'GREEN'))
+    buy_order_id = self._indodax.trade_buy(self._coin, market_sell_price, self._amount, self._idr_or_btc)['return']['orders'][0]
+    
+    return True
 
 class Utilities:
   def analyze(symbol, screener, exchange, interval):
@@ -45,16 +51,17 @@ class Utilities:
     )
     coin_summary = coin.get_analysis().summary
 
-    recommendation = f"{symbol} {coin_summary['RECOMMENDATION']}"
+    recommendation = coin_summary['RECOMMENDATION']
+    coin_recommendation = f"{symbol} {recommendation}"
     coin_buy = str(coin_summary['BUY'])
     coin_sell = str(coin_summary['SELL'])
     coin_neutral = str(coin_summary['NEUTRAL'])
 
-    recommendation_with_color = Utilities.dye_str(recommendation, 'YELLOW')
-    if recommendation[-3:len(recommendation)] == 'BUY':
-      recommendation_with_color = Utilities.dye_str(recommendation, 'GREEN')
-    elif recommendation[-4:len(recommendation)] == 'SELL':
-      recommendation_with_color = Utilities.dye_str(recommendation, 'RED')
+    recommendation_with_color = Utilities.dye_str(coin_recommendation, 'YELLOW')
+    if coin_recommendation[-3:len(coin_recommendation)] == 'BUY':
+      recommendation_with_color = Utilities.dye_str(coin_recommendation, 'GREEN')
+    elif coin_recommendation[-4:len(coin_recommendation)] == 'SELL':
+      recommendation_with_color = Utilities.dye_str(coin_recommendation, 'RED')
     
     print(f"{recommendation_with_color} | {Utilities.dye_str('BUY: ' + coin_buy, 'GREEN')} | {Utilities.dye_str('SELL: ' + coin_sell, 'RED')} | {Utilities.dye_str('NEUTRAL: ' + coin_neutral, 'YELLOW')}")
     return recommendation
